@@ -22,32 +22,21 @@ jobs:
 
       - name: Extract Android Project
         run: |
+          rm -rf project
           mkdir project
           unzip -o NeonRushIndia_v2_Playable.zip -d project
 
-      - name: Find Gradle Project
+      - name: Locate Android Project
         run: |
-          echo "Project files:"
-          find project -maxdepth 3 -type f | head -100
+          echo "Searching for Gradle project..."
+          SETTINGS=$(find project -type f -name "settings.gradle.kts" -o -name "settings.gradle" | head -n 1)
 
-      - name: Install Gradle
-        run: |
-          wget -q https://services.gradle.org/distributions/gradle-8.9-bin.zip
-          unzip -q gradle-8.9-bin.zip
-          echo "$PWD/gradle-8.9/bin" >> $GITHUB_PATH
-
-      - name: Build APK
-        working-directory: project
-        run: |
-          chmod +x gradlew || true
-          if [ -f gradlew ]; then
-            ./gradlew assembleDebug --no-daemon
-          else
-            gradle assembleDebug --no-daemon
+          if [ -z "$SETTINGS" ]; then
+            echo "ERROR: Gradle project not found"
+            find project -maxdepth 5 -type f | head -100
+            exit 1
           fi
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: NeonRushIndia-APK
-          path: project/**/build/outputs/apk/debug/*.apk
+          PROJECT_DIR=$(dirname "$SETTINGS")
+          echo "Android project found at: $PROJECT_DIR"
+         
