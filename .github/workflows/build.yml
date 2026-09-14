@@ -20,15 +20,14 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Extract Full Project
+      - name: Extract Fixed Project
         run: |
           rm -rf project
           mkdir project
-          unzip -o NeonRushIndia_FullCode.zip -d project
+          unzip -o NeonRushIndia_Fixed.zip -d project
 
       - name: Check Project
         run: |
-          echo "Checking Android project..."
           ls -la project
           ls -la project/app
           test -f project/settings.gradle.kts
