@@ -20,39 +20,33 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Extract Android Project
+      - name: Extract Full Project
         run: |
           rm -rf project
           mkdir project
-          unzip -o NeonRushIndia_v2_Playable.zip -d project
+          unzip -o NeonRushIndia_FullCode.zip -d project
 
-      - name: Find Android Project
+      - name: Check Project
         run: |
-          SETTINGS=$(find project -type f \( -name "settings.gradle.kts" -o -name "settings.gradle" \) | head -n 1)
-
-          if [ -z "$SETTINGS" ]; then
-            echo "ERROR: Gradle project not found"
-            find project -maxdepth 5 -type f
-            exit 1
-          fi
-
-          PROJECT_DIR=$(dirname "$SETTINGS")
-          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-          echo "Android project found: $PROJECT_DIR"
+          echo "Checking Android project..."
+          ls -la project
+          ls -la project/app
+          test -f project/settings.gradle.kts
+          test -f project/app/build.gradle.kts
 
       - name: Install Gradle
         run: |
-          wget -q https://services.gradle.org/distributions/gradle-8.9-bin.zip
-          unzip -q gradle-8.9-bin.zip
-          echo "$PWD/gradle-8.9/bin" >> "$GITHUB_PATH"
+          wget -q https://services.gradle.org/distributions/gradle-8.11.1-bin.zip
+          unzip -q gradle-8.11.1-bin.zip
+          echo "$PWD/gradle-8.11.1/bin" >> "$GITHUB_PATH"
 
       - name: Build APK
+        working-directory: project
         run: |
-          cd "$PROJECT_DIR"
           gradle assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: NeonRushIndia-APK
-          path: "**/build/outputs/apk/debug/*.apk"
+          path: project/app/build/outputs/apk/debug/*.apk
