@@ -1,4 +1,4 @@
-name: Build Neon Rush India FINAL APK
+name: Build Neon Rush India APK
 
 on:
   workflow_dispatch:
@@ -20,23 +20,38 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Find and extract project ZIP
+        run: |
+          ZIP_FILE=$(find . -maxdepth 2 -type f -name "*.zip" | head -n 1)
+          echo "ZIP found: $ZIP_FILE"
+          rm -rf project
+          mkdir project
+          unzip -o "$ZIP_FILE" -d project
+
+      - name: Locate Android project
+        run: |
+          SETTINGS=$(find project -name settings.gradle.kts -type f | head -n 1)
+          echo "Settings file: $SETTINGS"
+          test -n "$SETTINGS"
+
+          PROJECT_DIR=$(dirname "$SETTINGS")
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
+          test -f "$PROJECT_DIR/app/build.gradle.kts"
+          find "$PROJECT_DIR" -maxdepth 3 -type f | head -50
+
       - name: Install Gradle
         run: |
           wget -q https://services.gradle.org/distributions/gradle-8.11.1-bin.zip
           unzip -q gradle-8.11.1-bin.zip
           echo "$PWD/gradle-8.11.1/bin" >> "$GITHUB_PATH"
 
-      - name: Check Android project
-        run: |
-          test -f settings.gradle.kts
-          test -f app/build.gradle.kts
-          test -f app/src/main/java/com/neonrush/india/MainActivity.kt
-
       - name: Build APK
         run: gradle assembleDebug --no-daemon
+        working-directory: ${{ env.PROJECT_DIR }}
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: NeonRushIndia-FINAL-APK
-          path: app/build/outputs/apk/debug/*.apk
+          name: NeonRushIndia-APK
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/*.apk
